@@ -44,7 +44,7 @@ app.post('/api/config', async (req, res) => {
       valueType: valueType || 'STRING',
       description: description || ''
     };
-    
+
     if (isUseInAppDefault) {
       // CARA YANG BENAR: Set properti useInAppDefault ke true
       parameterConfig.defaultValue = {
@@ -52,8 +52,8 @@ app.post('/api/config', async (req, res) => {
       };
     } else {
       // Jika false, isi dengan nilai string biasa
-      parameterConfig.defaultValue = { 
-        value: String(value) 
+      parameterConfig.defaultValue = {
+        value: String(value)
       };
     }
 
@@ -67,6 +67,26 @@ app.post('/api/config', async (req, res) => {
     await rc.publishTemplate(template);
 
     res.status(200).json({ success: true, message: `Parameter '${key}' berhasil diperbarui.` });
+  } catch (error) {
+    console.error('Error Remote Config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/config/:key', async (req, res) => {
+  const { key } = req.params;
+
+  try {
+    const rc = admin.remoteConfig();
+    const template = await rc.getTemplate();
+
+    if (!template.parameters[key]) {
+      return res.status(404).json({ error: `Parameter dengan key '${key}' tidak ditemukan.` });
+    }
+    delete template.parameters[key];
+    await rc.validateTemplate(template);
+    await rc.publishTemplate(template);
+    res.status(200).json({ success: true, message: `Parameter '${key}' berhasil dihapus.` });
   } catch (error) {
     console.error('Error Remote Config:', error);
     res.status(500).json({ error: error.message });
